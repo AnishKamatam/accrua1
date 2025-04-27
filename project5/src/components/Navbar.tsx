@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import Button from './ui/Button';
+import { useAuth } from './auth/AuthContext';
+import AuthModal from './auth/AuthModal';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +25,19 @@ const Navbar: React.FC = () => {
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleAuthClick = async () => {
+    if (user) {
+      try {
+        await signOut();
+      } catch (error) {
+        console.error('Error during sign out:', error);
+        // The AuthContext will handle the cleanup even if there's an error
+      }
+    } else {
+      setIsAuthModalOpen(true);
+    }
   };
 
   return (
@@ -42,8 +59,17 @@ const Navbar: React.FC = () => {
           <a href="#testimonials" className="text-slate-700 hover:text-teal-600 transition-colors">Testimonials</a>
           <a href="#pricing" className="text-slate-700 hover:text-teal-600 transition-colors">Pricing</a>
           <a href="#about" className="text-slate-700 hover:text-teal-600 transition-colors">About</a>
-          <Button variant="outline">Log in</Button>
-          <Button>Get Started</Button>
+          {user ? (
+            <>
+              <span className="text-slate-700">{user.email}</span>
+              <Button variant="outline" onClick={handleAuthClick}>Log out</Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={handleAuthClick}>Log in</Button>
+              <Button onClick={() => setIsAuthModalOpen(true)}>Get Started</Button>
+            </>
+          )}
         </nav>
 
         {/* Mobile Menu Button */}
@@ -85,12 +111,26 @@ const Navbar: React.FC = () => {
               About
             </a>
             <div className="flex flex-col space-y-2 pt-2">
-              <Button variant="outline">Log in</Button>
-              <Button>Get Started</Button>
+              {user ? (
+                <>
+                  <span className="text-slate-700">{user.email}</span>
+                  <Button variant="outline" onClick={handleAuthClick}>Log out</Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={handleAuthClick}>Log in</Button>
+                  <Button onClick={() => setIsAuthModalOpen(true)}>Get Started</Button>
+                </>
+              )}
             </div>
           </div>
         </div>
       )}
+
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+      />
     </header>
   );
 };
